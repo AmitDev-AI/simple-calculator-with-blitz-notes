@@ -1,13 +1,13 @@
 ﻿# Simple Calculator with Blitz Notes
 
-A simple single-file calculator with Blitz Notes â€” plain HTML, CSS, and vanilla JavaScript. No frameworks, no libraries, no build step, no network requests.
+A simple single-file calculator with Blitz Notes — plain HTML, CSS, and vanilla JavaScript. No frameworks, no libraries, no build step, no network requests.
 
 **Live demo:** https://amitdev-ai.github.io/simple-calculator-with-blitz-notes/
 
 ## Features
 
 - Split-screen layout: simple calculator on the left, Blitz Notes on the right
-- Responsive â€” panels stack below 720px
+- Responsive — panels stack below 720px
 - Automatic light/dark theme via `prefers-color-scheme`
 - Calculator with expression line, chained operations, percent, sign toggle, and a 15-digit input cap
 - Float-safe results (`0.1 + 0.2` shows `0.3`)
@@ -20,7 +20,7 @@ A simple single-file calculator with Blitz Notes â€” plain HTML, CSS, and v
 
 | Key | Action |
 | --- | --- |
-| `0`â€“`9`, `.` | Enter a number |
+| `0`–`9`, `.` | Enter a number |
 | `+` `-` `*` `/` | Operators |
 | `Enter` or `=` | Evaluate |
 | `Backspace` | Delete last digit |
@@ -31,7 +31,7 @@ Shortcuts are ignored while the Blitz Notes textarea has focus.
 
 ## Run locally
 
-Download `amitcalc.html` and double-click it â€” it opens directly in Edge or Chrome. Notes are stored in your browser under the key `calculator-notes:notes:v1`, so they persist across refreshes.
+Download `amitcalc.html` and double-click it — it opens directly in Edge or Chrome. Notes are stored in your browser under the key `calculator-notes:notes:v1`, so they persist across refreshes.
 
 ## Repo layout
 
