@@ -2,7 +2,7 @@
 
 A single-file calculator and notepad app built with plain HTML, CSS, and vanilla JavaScript. No frameworks, no libraries, no build step, no network requests.
 
-**Live demo:** https://amitdev-ai.github.io/My-Calc/
+**Live demo:** https://amitdev-ai.github.io/trial-calculator-with-notes/
 
 ## Features
 
