@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Calculator + Notes</title>
+<style>
+/* Theme tokens: light by default, dark via prefers-color-scheme */
+:root{
+  --bg:#eef1f7;--card:#fff;--text:#16202e;--muted:#6b7a90;--line:#e2e7f1;
+  --num:#f1f4fa;--num-h:#e3e9f5;--op:#dfe8ff;--op-h:#ccdafd;--op-text:#1f4fd8;
+  --eq:#2f6bff;--eq-h:#1f57e6;--accent:#2f6bff;--danger:#d13a3a;
+  --shadow:0 10px 30px rgba(20,35,70,.12);
+}
+/* Accent moods: the sparkle button swaps these on <html data-mood> */
+html[data-mood="grape"]{--accent:#7c5cff;--op:#ece7ff;--op-h:#ddd4ff;--op-text:#5b3ee8;--eq:#7c5cff;--eq-h:#6b4bf5}
+html[data-mood="forest"]{--accent:#0e9f6e;--op:#dcf5ec;--op-h:#c6eee0;--op-text:#0a7d57;--eq:#0e9f6e;--eq-h:#0c8a5f}
+html[data-mood="sunset"]{--accent:#e2622f;--op:#ffe8dd;--op-h:#ffd6c4;--op-text:#bf4c22;--eq:#e2622f;--eq-h:#cb5527}
+@media (prefers-color-scheme:dark){
+:root{
+  --bg:#0e131b;--card:#171e28;--text:#e8eef8;--muted:#93a3b8;--line:#2a3442;
+  --num:#212a36;--num-h:#2b3644;--op:#26344d;--op-h:#324764;--op-text:#9dbcff;
+  --eq:#3d78ff;--eq-h:#5489ff;--accent:#6f9cff;--danger:#ff7b7b;
+  --shadow:0 10px 30px rgba(0,0,0,.45);
+}
+/* Same moods, tuned for the dark palette */
+html[data-mood="grape"]{--accent:#a78bfa;--op:#2c2748;--op-h:#3a3460;--op-text:#c4b5fd;--eq:#7c5cff;--eq-h:#8f73ff}
+html[data-mood="forest"]{--accent:#34d399;--op:#1d3a30;--op-h:#265043;--op-text:#6ee7b7;--eq:#10b981;--eq-h:#16c78f}
+html[data-mood="sunset"]{--accent:#fb923c;--op:#3d2a20;--op-h:#523829;--op-text:#fdba74;--eq:#f97316;--eq-h:#fb8b32}
+}
+/* Page: centers the two-panel container on the themed background */
+*{box-sizing:border-box}
+body{
+margin:0;padding:24px;min-height:100vh;display:flex;align-items:center;justify-content:center;
+font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:var(--text);background:var(--bg);
+transition:background .25s,color .25s;
+}
+/* Two equal columns inside a centered, max-width container */
+.wrap{width:100%;max-width:920px;display:grid;grid-template-columns:1fr 1fr;gap:20px}
+/* Rounded card with a soft shadow; cards rise in on load */
+.card{display:flex;flex-direction:column;gap:14px;padding:18px;background:var(--card);border-radius:16px;box-shadow:var(--shadow);animation:rise .45s ease both}
+.wrap .card:last-child{animation-delay:.08s}
+@keyframes rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+.card h2{margin:0;font-size:13px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+/* Floating sparkle button that cycles accent palettes */
+.mood{position:fixed;top:14px;right:14px;width:40px;height:40px;border-radius:50%;border:1px solid var(--line);background:var(--card);color:var(--accent);font-size:16px;cursor:pointer;box-shadow:var(--shadow);transition:transform .25s,color .25s}
+.mood:hover{transform:rotate(20deg) scale(1.08)}
+/* Narrow screens: stack the panels vertically */
+@media (max-width:720px){
+body{padding:14px;align-items:flex-start}
+.wrap{grid-template-columns:1fr}
+}
+/* Display: small expression line above the main value */
+.display{background:var(--num);border-radius:12px;padding:12px 14px;text-align:right;overflow:hidden}
+.expr{min-height:18px;font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.value{font-size:34px;font-weight:600;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}
+.value.error{font-size:16px;color:var(--danger)}
+/* Paper tape: the last few finished calculations, click one to reuse */
+.tape{display:flex;gap:6px;overflow-x:auto}
+.tape:empty{display:none}
+.tape button{font:inherit;font-size:11px;padding:4px 9px;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--muted);cursor:pointer;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+.tape button:hover{color:var(--accent);border-color:var(--accent)}
+/* 4-column key grid */
+.keys{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.keys button{
+font:inherit;font-size:17px;font-weight:500;padding:13px 0;border:0;border-radius:11px;
+color:var(--text);background:var(--num);cursor:pointer;transition:.12s;
+}
+.keys button:hover{background:var(--num-h)}
+.keys button:active{transform:scale(.96)}
+.keys button:focus-visible{outline:2px solid var(--accent)}
+/* Operator and equals keys stand out from number keys */
+.keys .op{background:var(--op);color:var(--op-text);font-weight:600}
+.keys .op:hover{background:var(--op-h)}
+.keys .eq{background:var(--eq);color:#fff;font-weight:600}
+.keys .eq:hover{background:var(--eq-h)}
+/* Notes textarea fills the card and stays resizable */
+textarea{
+flex:1;width:100%;min-height:280px;resize:vertical;padding:12px 14px;font:inherit;line-height:1.6;
+color:var(--text);background:var(--num);border:1px solid var(--line);border-radius:12px;outline:none;
+}
+textarea::placeholder{color:var(--muted)}
+textarea:focus{border-color:var(--accent)}
+.notes-foot{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.status{font-size:12px;color:var(--muted)}
+.status.error{color:var(--danger)}
+.acts{display:flex;gap:6px}
+.clear{font:inherit;font-size:12px;padding:7px 12px;border-radius:9px;cursor:pointer;border:1px solid var(--line);background:transparent;color:var(--muted)}
+.clear:hover{color:var(--danger);border-color:var(--danger)}
+.clear.alt:hover{color:var(--accent);border-color:var(--accent)}
+/* Respect reduced-motion preferences */
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<button class="mood" id="mood" title="Change accent" aria-label="Change accent color">✦</button>
+<main class="wrap">
+<!-- ==================== CALCULATOR ==================== -->
+<section class="card" aria-label="Calculator">
+<h2>Calculator</h2>
+<div class="display">
+<div class="expr" id="expr" aria-hidden="true"></div>
+<div class="value" id="value" aria-live="polite" title="Click to copy">0</div>
+</div>
+<div class="tape" id="tape" aria-label="Recent calculations"></div>
+<!-- Keys (one delegated listener) -->
+<div class="keys" id="keys">
+<button data-k="clear">C</button><button data-k="back" aria-label="Backspace">⌫</button>
+<button data-k="%" class="op">%</button><button data-k="/" class="op">÷</button>
+<button data-k="7">7</button><button data-k="8">8</button>
+<button data-k="9">9</button><button data-k="*" class="op">×</button>
+<button data-k="4">4</button><button data-k="5">5</button>
+<button data-k="6">6</button><button data-k="-" class="op">−</button>
+<button data-k="1">1</button><button data-k="2">2</button>
+<button data-k="3">3</button><button data-k="+" class="op">+</button>
+<button data-k="neg">±</button><button data-k="0">0</button>
+<button data-k=".">.</button><button data-k="=" class="eq">=</button>
+</div>
+</section>
+<!-- ====================== NOTES ====================== -->
+<section class="card" aria-label="Notes">
+<h2>Notes</h2>
+<textarea id="notes" placeholder="Type anything here — it saves automatically."></textarea>
+<div class="notes-foot">
+<span class="status" id="status" aria-live="polite">Ready</span>
+<div class="acts">
+<button class="clear alt" id="export" title="Download notes as .txt">Export</button>
+<button class="clear" id="clearNotes">Clear</button>
+</div>
+</div>
+</section>
+</main>
+
+<script>
+/* State: current (typed text or result), prev (operand), op (pending
+   operator), fresh (next digit starts over), err (error showing). */
+var current="0",prev=null,op=null,fresh=true,err=false;
+var exprEl=document.getElementById("expr"),valueEl=document.getElementById("value"),
+    keysEl=document.getElementById("keys"),tapeEl=document.getElementById("tape");
+
+/* Redraw the display */
+function show(){
+valueEl.classList.toggle("error",err);
+valueEl.textContent=current;
+exprEl.textContent=(op!==null&&prev!==null)?prev+" "+sym(op):"";
+}
+/* Pretty operator symbols */
+function sym(o){return {"+":"+","-":"−","*":"×","/":"÷"}[o]||o;}
+/* toPrecision(12) strips float noise: 0.1+0.2 shows 0.3 */
+function clean(n){return isFinite(n)?Number(n.toPrecision(12)).toString():n;}
+/* Digit count, for the 15-digit input cap */
+function digitsOf(s){return (s.match(/\d/g)||[]).length;}
+/* Compute with a switch (never eval); b===0 -> NaN marks divide error */
+function compute(a,b,o){
+switch(o){
+  case "+":return a+b; case "-":return a-b;
+  case "*":return a*b; case "/":return b===0?NaN:a/b;
+  default:return b;
+}
+}
+/* Friendly error; next key recovers */
+function fail(msg){current=msg;prev=null;op=null;err=true;fresh=true;show();}
+/* Apply pending operation, if any */
+function applyPending(b){return (op===null||prev===null)?b:compute(prev,b,op);}
+
+/* Surprise: paper tape of the last four results. Clicking a chip loads
+   that result back into the display so it can be reused. */
+var tape=[];
+function addTape(text,result){
+tape.unshift({text:text,result:result});
+tape=tape.slice(0,4);
+tapeEl.textContent="";
+tape.forEach(function(item){
+  var b=document.createElement("button");
+  b.type="button";b.textContent=item.text;b.title="Reuse "+item.result;
+  b.addEventListener("click",function(){
+    current=item.result;prev=null;op=null;fresh=true;err=false;show();
+  });
+  tapeEl.appendChild(b);
+});
+}
+
+/* All key behaviour lives here */
+function press(k){
+if(err){current="0";prev=null;op=null;fresh=true;err=false;}
+if(k>="0"&&k<="9"){                        /* digit, 15 max */
+  if(fresh){current=k;fresh=false;}
+  else if(digitsOf(current)<15)current+=k;
+  return show();
+}
+if(k==="."){                               /* one decimal point only */
+  if(fresh){current="0.";fresh=false;}
+  else if(current.indexOf(".")<0)current+=".";
+  return show();
+}
+if(k==="neg"){                             /* toggle sign */
+  if(current!=="0")current=current[0]==="-"?current.slice(1):"-"+current;
+  return show();
+}
+if(k==="back"){                            /* drop last character */
+  if(fresh)current="0";
+  else{
+    current=current.slice(0,-1);
+    if(current===""||current==="-")current="0";
+  }
+  return show();
+}
+if(k==="clear"){                           /* full reset */
+  current="0";prev=null;op=null;fresh=true;err=false;
+  return show();
+}
+if(k==="%"){                               /* percent = divide by 100 */
+  current=clean(parseFloat(current)/100);fresh=false;
+  return show();
+}
+if(k==="="){                               /* evaluate */
+  if(op===null||prev===null)return show();
+  var expr=prev+" "+sym(op)+" "+current;
+  var r=compute(prev,parseFloat(current),op);
+  if(isNaN(r)||!isFinite(r))return fail("Cannot divide by zero");
+  current=clean(r);prev=null;op=null;fresh=true;
+  valueEl.classList.remove("error");valueEl.textContent=current;
+  exprEl.textContent=expr+" =";
+  addTape(expr+" = "+current,current);
+  if(current==="42")exprEl.textContent+=" · the answer";  /* easter egg */
+  return;
+}
+/* Operator: evaluate step by step, so 2+3+4 chains correctly */
+var v=parseFloat(current);
+if(op!==null&&prev!==null&&!fresh){
+  v=applyPending(v);
+  if(isNaN(v)||!isFinite(v))return fail("Cannot divide by zero");
+}
+prev=v;op=k;fresh=true;current=clean(v);
+show();
+}
+
+/* One delegated click listener for every key */
+keysEl.addEventListener("click",function(e){
+var b=e.target.closest("button[data-k]");
+if(b)press(b.dataset.k);
+});
+
+/* Keyboard shortcuts, ignored while the notes textarea is focused */
+document.addEventListener("keydown",function(e){
+if(e.target&&e.target.id==="notes")return;
+var k=e.key,map={"Enter":"=","=":"=","Backspace":"back","Escape":"clear","Delete":"clear"};
+if(("0"<=k&&k<="9")||".+-*/%".indexOf(k)>-1||map[k]){press(map[k]||k);e.preventDefault();}
+});
+
+/* Surprise: click the big value to copy it. The execCommand path is a
+   fallback for when the clipboard API is blocked. */
+valueEl.addEventListener("click",function(){
+if(err)return;
+var text=valueEl.textContent;
+function done(ok){
+  var msg=ok?"Copied ✓":"Copy failed";
+  exprEl.textContent=msg;
+  setTimeout(function(){if(exprEl.textContent===msg)show();},1200);
+}
+if(navigator.clipboard&&navigator.clipboard.writeText){
+  navigator.clipboard.writeText(text).then(function(){done(true);},function(){done(false);});
+  return;
+}
+try{
+  var t=document.createElement("textarea");
+  t.value=text;t.style.position="fixed";t.style.opacity="0";
+  document.body.appendChild(t);t.select();
+  done(document.execCommand("copy"));t.remove();
+}catch(e){done(false);}
+});
+
+/* Surprise: accent moods. The sparkle button cycles four palettes and
+   remembers the pick; the palette rules live in the CSS above. */
+var MOODS=["ocean","grape","forest","sunset"],moodIdx=0,moodBtn=document.getElementById("mood");
+var MOODKEY="calculator-notes:mood:v1";
+try{
+var savedMood=localStorage.getItem(MOODKEY);
+if(savedMood&&MOODS.indexOf(savedMood)>0)moodIdx=MOODS.indexOf(savedMood);
+}catch(e){}
+function applyMood(){
+document.documentElement.dataset.mood=MOODS[moodIdx];
+moodBtn.title="Accent: "+MOODS[moodIdx]+" (click to change)";
+}
+moodBtn.addEventListener("click",function(){
+moodIdx=(moodIdx+1)%MOODS.length;
+applyMood();
+try{localStorage.setItem(MOODKEY,MOODS[moodIdx]);}catch(e){}
+});
+
+/* Notes save under one key. Every storage call is in try/catch because
+   localStorage can be blocked, disabled, or full. */
+var KEY="calculator-notes:notes:v1";
+var notesEl=document.getElementById("notes"),statusEl=document.getElementById("status");
+var saveTimer=null,storageOK=true;
+
+function setStatus(text,bad){statusEl.textContent=text;statusEl.classList.toggle("error",!!bad);}
+/* Small clock for the "Saved" label */
+function clock(){return new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"});}
+
+/* Restore saved notes on page load */
+try{
+var saved=localStorage.getItem(KEY);
+if(saved!==null)notesEl.value=saved;
+}catch(e){
+storageOK=false;
+setStatus("Storage unavailable",true);
+}
+
+/* Save immediately */
+function saveNow(){
+clearTimeout(saveTimer);saveTimer=null;
+if(!storageOK)return setStatus("Storage unavailable",true);
+try{
+  localStorage.setItem(KEY,notesEl.value);
+  setStatus("Saved ✓ "+clock());
+}catch(e){
+  setStatus("Could not save",true);
+}
+}
+
+/* Debounced autosave: ~400ms after typing stops */
+notesEl.addEventListener("input",function(){
+if(!storageOK)return setStatus("Storage unavailable",true);
+setStatus("Saving…");
+clearTimeout(saveTimer);
+saveTimer=setTimeout(saveNow,400);
+});
+
+/* Save when the page is refreshed or closed */
+window.addEventListener("beforeunload",function(){
+if(!storageOK)return;
+try{localStorage.setItem(KEY,notesEl.value);}catch(e){}
+});
+
+/* Surprise: download the notes as a dated .txt file (all local) */
+document.getElementById("export").addEventListener("click",function(){
+try{
+  var a=document.createElement("a"),url=URL.createObjectURL(new Blob([notesEl.value],{type:"text/plain"}));
+  a.href=url;a.download="notes-"+new Date().toISOString().slice(0,10)+".txt";
+  document.body.appendChild(a);a.click();a.remove();
+  setTimeout(function(){URL.revokeObjectURL(url);},1000);
+  setStatus("Exported ✓ "+clock());
+}catch(e){setStatus("Could not export",true);}
+});
+
+/* Clear notes only after confirmation */
+document.getElementById("clearNotes").addEventListener("click",function(){
+if(!confirm("Delete all notes? This cannot be undone."))return;
+notesEl.value="";notesEl.focus();saveNow();
+});
+
+show();       /* initial calculator paint */
+applyMood();  /* initial accent */
+</script>
+</body>
+</html>
