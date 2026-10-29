@@ -1,19 +1,19 @@
-# Calculator + Notes
+# Simple Calculator with Blitz Notes
 
-A single-file calculator and notepad app built with plain HTML, CSS, and vanilla JavaScript. No frameworks, no libraries, no build step, no network requests.
+A simple single-file calculator with Blitz Notes — plain HTML, CSS, and vanilla JavaScript. No frameworks, no libraries, no build step, no network requests.
 
-**Live demo:** https://amitdev-ai.github.io/trial-calculator-with-notes/
+**Live demo:** https://amitdev-ai.github.io/simple-calculator-with-blitz-notes/
 
 ## Features
 
-- Split-screen layout: calculator on the left, notes on the right
+- Split-screen layout: simple calculator on the left, Blitz Notes on the right
 - Responsive — panels stack below 720px
 - Automatic light/dark theme via `prefers-color-scheme`
 - Calculator with expression line, chained operations, percent, sign toggle, and a 15-digit input cap
 - Float-safe results (`0.1 + 0.2` shows `0.3`)
 - Friendly divide-by-zero message that recovers on the next key press
 - Full keyboard support
-- Notes autosave to `localStorage` (debounced ~400 ms, plus save on page unload)
+- Blitz Notes autosave to `localStorage` (debounced ~400 ms, plus save on page unload)
 - **Extras:** accent palette switcher, paper tape of recent calculations, click-to-copy result, export notes as `.txt`
 
 ## Keyboard shortcuts
@@ -27,7 +27,7 @@ A single-file calculator and notepad app built with plain HTML, CSS, and vanilla
 | `Esc` or `Delete` | Clear |
 | `%` | Percent |
 
-Shortcuts are ignored while the notes textarea has focus.
+Shortcuts are ignored while the Blitz Notes textarea has focus.
 
 ## Run locally
 
